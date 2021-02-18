@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Line Calculator</string>
+    <string name="explanation">Insert below the coordinates of two points from which the line passes and click the Calculate button</string>
+    <string name="calculate">calculate</string>
+    <string name="line_image">Line image</string>
+    <string name="result_test">The line equation is the following: %s</string>
+</resources>
