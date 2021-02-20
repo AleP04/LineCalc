@@ -15,52 +15,122 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.calculate.setOnClickListener { findEquation() }
-        val graph = findViewById<View>(R.id.graph) as GraphView
-        // activate horizontal zooming and scrolling
-        graph.getViewport().setScalable(true);
-        // activate horizontal scrolling
-        graph.getViewport().setScrollable(true);
-        // activate horizontal and vertical zooming and scrolling
-        graph.getViewport().setScalableY(true);
-        // activate vertical scrolling
-        graph.getViewport().setScrollableY(true);}
+        binding.calculate.setOnClickListener { calculateAndDraw() }
+    }
 
-    private fun findEquation() {
-        val yA = binding.yA.text.toString().toIntOrNull()
-        val yB = binding.yB.text.toString().toIntOrNull()
-        val xA = binding.xA.text.toString().toIntOrNull()
-        val xB = binding.xB.text.toString().toIntOrNull()
+    private fun calculateAndDraw() {//pulisci grafico per prima cosa
+        val graph = findViewById<View>(R.id.graph) as GraphView
+        val yA = binding.yA.text.toString().toDoubleOrNull()
+        val yB = binding.yB.text.toString().toDoubleOrNull()
+        val xA = binding.xA.text.toString().toDoubleOrNull()
+        val xB = binding.xB.text.toString().toDoubleOrNull()
+        var extension: Double = 4.0
+        var extxA=0.0
+        var extyA =0.0
+        var extxB=0.0
+        var extyB=0.0
+        var m=0.0
+        var q=0.0
         var result: String
         if (yA == null || yB == null || xA == null || xB == null) {
             result = "coordinates not present, check and retry!"
             displayEquation(result)
             return
-        }
-        else{
-        val m = (yB - yA)
-        val q = yA - m * xA
-        if (q >= 0)
-            result = "y=$m" + "x+$q"
-        else
-            result = "y=$m" + "x$q"
+        } else {
+            m = (yB - yA)/(xB-xA)
+            q = yA - (m * xA)
+            if (q >= 0)
+                result = "y=$m" + "x+$q"
+            else
+                result = "y=$m" + "x$q"
         }
         displayEquation(result)
+        //generate extensions
+        if (xA > xB) {
+            extxA = xA + extension
+            extyA = (extxA * m) + q
+            extxB = xB - extension
+            extyB = (extxB * m) + q
+        } else {
+            extxA = xA - extension
+            extyA = (extxA * m) + q
+            extxB = xB + extension
+            extyB = (extxB * m) + q
+        }
+        drawPoints(graph, xA, yA, xB, yB)
+        drawLine(graph, extxA, extyA, extxB, extyB)
     }
 
     private fun displayEquation(result: String) {
         binding.result.text = getString(R.string.result_test, result)
-        val graph = findViewById<View>(R.id.graph) as GraphView
-        val lineSeries = LineGraphSeries(arrayOf<DataPoint>(
-            DataPoint(1.0, 1.0),
-            DataPoint(2.0, 2.0)
-        ))
-        graph.addSeries(lineSeries)
-        val pointSeries = PointsGraphSeries(arrayOf<DataPoint>(
-            DataPoint(1.0, 1.0),
-            DataPoint(2.0,2.0))
+    }
+
+    fun drawPoints(
+        graph: GraphView,
+        xA: Double,
+        yA: Double,
+        xB: Double,
+        yB: Double
+    ) {
+        var series = PointsGraphSeries(
+            arrayOf<DataPoint>(
+            )
         )
-        graph.addSeries(pointSeries)
+        if (xA < xB) {
+            series = PointsGraphSeries(//controlla quali sono i maggiori ed i minori
+                arrayOf<DataPoint>(
+                    DataPoint(xA, yA),
+                    DataPoint(xB, yB)
+                )
+            )
+        } else {
+            series = PointsGraphSeries(//controlla quali sono i maggiori ed i minori
+                arrayOf<DataPoint>(
+                    DataPoint(xB, yB),
+                    DataPoint(xA, yA)
+                )
+            )
+        }
+
+        graph.addSeries(series)
+    }
+
+    fun drawLine(graph: GraphView, extxA: Double, extyA: Double, extxB: Double, extyB: Double) {//inserisci le estensioni dei punti come parametri
+        graph.viewport.isXAxisBoundsManual = true
+        graph.viewport.isYAxisBoundsManual = true
+        graph.viewport.isScalable = true
+        graph.viewport.setScalableY(true)
+        var extendLine = LineGraphSeries(
+            arrayOf<DataPoint>(
+            )
+        )
+        if (extxA < extxB) {
+            extendLine = LineGraphSeries(//controlla quali sono i maggiori ed i minori
+                arrayOf<DataPoint>(
+                    DataPoint(extxA, extyA),
+                    DataPoint(extxB, extyB)
+                )
+            )
+            graph.viewport.setMinX(extxA)//stesso valore di extend line
+            graph.viewport.setMaxX(extxB)//stesso valore di extend line
+        } else {
+            extendLine = LineGraphSeries(//controlla quali sono i maggiori ed i minori
+                arrayOf<DataPoint>(
+                    DataPoint(extxB, extyB),
+                    DataPoint(extxA, extyA)
+                )
+            )
+            graph.viewport.setMinX(extxB)//stesso valore di extend line
+            graph.viewport.setMaxX(extxA)//stesso valore di extend line
+        }
+        if(extyA<extyB) {
+            graph.viewport.setMinY(extyA)
+            graph.viewport.setMaxY(extyB)
+        }else{
+            graph.viewport.setMinY(extyB)
+            graph.viewport.setMaxY(extyB)
+        }
+        graph.addSeries(extendLine)
 
     }
 }
